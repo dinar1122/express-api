@@ -35,12 +35,12 @@ const UserController = {
           avatarUrl: `/uploads/${avatarName}`,
         },
       });
-      res.json(user);
+      res.status(200).send(user);
     } catch (error) {
-      console.error(`register error ${error}`);
+      console.error(`ошибка при регистрации ${error}`);
       res.status(500).json({ error: "server error " + error });
     }
-    res.status(200).send(email);
+    
   },
   login: async (req, res) => {
     const { email, password } = req.body;

@@ -44,7 +44,7 @@ const PostController = {
             }))
             res.json(postWithLikeByUser)
         } catch (error) {
-            console.log('get posts error server' + error)
+            console.log('ошибка при получении всех постов' + error)
             res.status(500).json({error: 'server error'})
         }
     },
@@ -68,7 +68,7 @@ const PostController = {
                 }
             })
             if (!post) {
-                return res.status(404).json({error: 'post is not found'})
+                return res.status(404).json({error: 'запись не найдена'})
             }
             const postWithLikeByUser = {
                 ...post,
@@ -76,7 +76,7 @@ const PostController = {
             }
             res.json(postWithLikeByUser).res.status(200)
         } catch (error) {
-            console.log('get post by id error server' + error)
+            console.log('ошибка при получении поста по айди' + error)
             res.status(500).json({error: 'server error'})
         }
 
@@ -101,7 +101,7 @@ const PostController = {
             ])
             res.json(transaction)
         } catch (error) {
-            console.log('remove post by id error server' + error)
+            console.log('ошибка при удалении поста по айди' + error)
             res.status(500).json({error: 'server error'})
         }
     }
