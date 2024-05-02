@@ -42,7 +42,7 @@ router.get("/posts/:id", authToken, PostController.getPostById);
 
 router.post("/comments", authToken, CommentController.createComment);
 router.put("/comments", authToken, CommentController.updateComment);
-router.delete("/comments", authToken, CommentController.removeComment);
+router.delete("/comments/:id", authToken, CommentController.removeComment);
 
 /* Likes */
 
@@ -55,8 +55,8 @@ router.delete("/dislikes/:id", authToken, DislikeController.removeDislike);
 
 /* Subscribtions */
 
-router.post("/subs/:id", authToken, SubsController.subscribeUser);
-router.delete("/subs/:id", authToken, SubsController.unsubscribeUser);
+router.post("/follows/:id", authToken, SubsController.subscribeUser);
+router.delete("/follows/:id", authToken, SubsController.unsubscribeUser);
 
 /* Topics subs */
 

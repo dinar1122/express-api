@@ -25,9 +25,9 @@ const CommentController = {
     }
   },
   removeComment: async (req, res) => {
-    const { id } = req.body;
+    const { id } = req.params;
     const { userId } = req.user;
-
+    
     try {
       const comment = await prisma.comment.findUnique({ where: { id } });
 

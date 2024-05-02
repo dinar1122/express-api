@@ -4,10 +4,14 @@ const path = require('path');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
 const fs = require('fs')
+const cors = require('cors')
 
 const app = express();
 
+
+
 // view engine setup
+app.use(cors())
 app.set('view engine', 'jade');
 
 app.use(logger('dev'));

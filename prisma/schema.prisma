@@ -63,7 +63,7 @@ model Post {
   author    User      @relation(fields: [authorId], references: [id])
   authorId  String    @db.ObjectId
   likes     Like[]
-  dislike   Dislike[]
+  dislikes   Dislike[]
   comments  Comment[]
   createdAt DateTime  @default(now())
 }

@@ -31,6 +31,7 @@ const PostController = {
             const posts = await prisma.post.findMany({
                 include: {
                     likes: true,
+                    dislikes: true,
                     author: true,
                     comments: true
                 },
@@ -40,7 +41,8 @@ const PostController = {
             })
             const postWithLikeByUser = posts.map(item => ({
                 ...item,
-                likedByUser: item.likes.some(like => like.userId === userId)
+                likedByUser: item.likes.some(like => like.userId === userId),
+                dislikedByUser: item.dislikes.some(dislike => dislike.userId === userId)
             }))
             res.json(postWithLikeByUser)
         } catch (error) {
@@ -53,7 +55,7 @@ const PostController = {
         const userId = req.user.userId
 
         try {
-            const post =await prisma.post.findUnique({
+            const post = await prisma.post.findUnique({
                 where: {
                     id: id
                 },
@@ -64,6 +66,7 @@ const PostController = {
                         }
                     },
                     likes: true,
+                    dislikes: true,
                     author: true,
                 }
             })
@@ -72,9 +75,10 @@ const PostController = {
             }
             const postWithLikeByUser = {
                 ...post,
-                likedByUser: post.likes.some(like => like.userId === userId)
+                likedByUser: post.likes.some(like => like.userId === userId),
+                dislikedByUser: post.dislikes.some(dislike => dislike.userId === userId)
             }
-            res.json(postWithLikeByUser).res.status(200)
+            res.json(postWithLikeByUser)
         } catch (error) {
             console.log('ошибка при получении поста по айди' + error)
             res.status(500).json({error: 'server error'})
@@ -82,6 +86,7 @@ const PostController = {
 
     },
     removePostById: async (req, res) => {
+        console.log(req.params)
         const {id} = req.params
         const userId = req.user.userId
         const post = await prisma.post.findUnique({where: {id}})
@@ -97,6 +102,7 @@ const PostController = {
             const transaction = await prisma.$transaction([
                 prisma.comment.deleteMany({ where: { postId: id}}),
                 prisma.like.deleteMany({ where: { postId: id}}),
+                prisma.dislike.deleteMany({ where: { postId: id}}),
                 prisma.post.delete({ where: { id: id}})
             ])
             res.json(transaction)
