@@ -46,6 +46,7 @@ model Topic {
   name          String
   description   String?
   topicSubs     TopicSubs[]
+  posts         Post[]
 }
 
 model TopicSubs {
@@ -66,6 +67,8 @@ model Post {
   dislikes   Dislike[]
   comments  Comment[]
   createdAt DateTime  @default(now())
+  topic     Topic?    @relation(fields: [topicId], references: [id])
+  topicId   String?   @db.ObjectId
 }
 
 model Like {

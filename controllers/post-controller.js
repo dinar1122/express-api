@@ -2,7 +2,7 @@ const { prisma } = require("../prisma/prisma-client");
 
 const PostController = {
     createPost: async (req, res) => {
-        const {content } = req.body
+        const {content, topicId = '' } = req.body
 
         const authorId = req.user.userId
 
@@ -14,7 +14,8 @@ const PostController = {
             const post = await prisma.post.create({
                 data: {
                     content,
-                    authorId
+                    authorId,
+                    topicId
                 }
             })
             res.json(post)
@@ -33,7 +34,8 @@ const PostController = {
                     likes: true,
                     dislikes: true,
                     author: true,
-                    comments: true
+                    comments: true,
+                    topic: true,
                 },
                 orderBy: {
                     createdAt: 'desc'
@@ -68,6 +70,7 @@ const PostController = {
                     likes: true,
                     dislikes: true,
                     author: true,
+                    topic: true,
                 }
             })
             if (!post) {
@@ -110,7 +113,47 @@ const PostController = {
             console.log('ошибка при удалении поста по айди' + error)
             res.status(500).json({error: 'server error'})
         }
-    }
+    },getPostByTopic: async (req, res) => {
+        console.log(req.params)
+        const {id } = req.params
+        const userId = req.user.userId
+        try {
+            const posts = await prisma.post.findMany({
+                where: {
+                    topicId: id
+                },
+                include: {
+                    comments: {
+                        include: {
+                            user: true
+                        }
+                    },
+                    likes: true,
+                    dislikes: true,
+                    author: true,
+                    topic: true,
+                }
+            })
+            if (!posts) {
+                return res.status(404).json({error: 'запись не найдена1111'})
+            }
+            const postsWithLikeByUser = posts.map(post => {
+                const likedByUser = post.likes.some(like => like.userId === userId);
+                const dislikedByUser = post.dislikes.some(dislike => dislike.userId === userId);
+    
+                return {
+                    ...post,
+                    likedByUser,
+                    dislikedByUser
+                };
+            });
+            res.json(postsWithLikeByUser)
+        } catch (error) {
+            console.log('ошибка при получении поста по теме' + error)
+            res.status(500).json({error: 'server error'})
+        }
+
+    },
 }
 
 module.exports = PostController

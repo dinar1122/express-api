@@ -72,6 +72,26 @@ const TopicSubsController = {
         res.status(500).json({ error: "Ошибка при получении подписок на темы" });
     }
   },
+  getAllTopics: async (req, res) => {
+    const { userId } = req.user;
+
+    try {
+      
+        const topics = await prisma.topic.findMany({
+          include: {
+              topicSubs: true,
+          },
+      })
+      const topicsWithSubscription = topics.map((topic) => ({
+        ...topic,
+        isSubscribed: topic.topicSubs.some(sub => sub.followerId === userId)
+    }));
+        res.json(topicsWithSubscription)
+    } catch (error) {
+        console.log(error)
+        res.status(500).json({ error: "Ошибка при получении тем" });
+    }
+  },
 };
 
 module.exports = TopicSubsController;

@@ -100,8 +100,7 @@ const UserController = {
   },
   updateUser: async (req, res) => {
     const {id} = req.params
-    const {email, username, dateOfBirth, bio, location} = req.body
-
+    const {email, username, dateOfBirth , bio, location} = req.body
     let filePath
 
     if (req.file && req.file.path) {

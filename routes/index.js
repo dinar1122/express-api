@@ -37,6 +37,7 @@ router.post("/posts", authToken, PostController.createPost);
 router.delete("/posts/:id", authToken, PostController.removePostById);
 router.get("/posts", authToken, PostController.getAllPosts);
 router.get("/posts/:id", authToken, PostController.getPostById);
+router.get("/posts/topic/:id", authToken, PostController.getPostByTopic);
 
 /* comments */
 
@@ -61,7 +62,7 @@ router.delete("/follows/:id", authToken, SubsController.unsubscribeUser);
 /* Topics subs */
 
 router.post('/topic/:topicId', authToken, TopicSubsController.createSubcription)
-router.get('/topic', authToken, TopicSubsController.getSubsByUserId)
+router.get('/topic', authToken, TopicSubsController.getAllTopics)
 router.delete('/topic/:topicId', authToken, TopicSubsController.removeSubcription)
 
 module.exports = router;
