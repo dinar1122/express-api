@@ -14,61 +14,80 @@ datasource db {
 }
 
 model User {
-  id          String    @id @default(auto()) @map("_id") @db.ObjectId
-  email       String    @unique
+  id          String         @id @default(auto()) @map("_id") @db.ObjectId
+  email       String         @unique
   password    String
   username    String?
   avatarUrl   String?
   dateOfBirth DateTime?
-  createdAt   DateTime  @default(now())
+  createdAt   DateTime       @default(now())
   bio         String?
   location    String?
   posts       Post[]
   likes       Like[]
   dislike     Dislike[]
   comments    Comment[]
-  followers   Follows[] @relation("following")
-  following   Follows[] @relation("follower")
-  topics  TopicSubs[] @relation("topicFollower")
-  
+  followers   Follows[]      @relation("following")
+  following   Follows[]      @relation("follower")
+  topics      TopicSubs[]    @relation("topicFollower")
+  category    CategorySubs[] @relation("categoryFollower")
 }
 
 model Follows {
-  id           String    @id @default(auto()) @map("_id") @db.ObjectId
-  follower     User      @relation("follower", fields: [followerId], references: [id])
-  followerId   String    @db.ObjectId
-  following    User      @relation("following", fields: [followingId], references: [id])
-  followingId  String    @db.ObjectId
+  id          String @id @default(auto()) @map("_id") @db.ObjectId
+  follower    User   @relation("follower", fields: [followerId], references: [id])
+  followerId  String @db.ObjectId
+  following   User   @relation("following", fields: [followingId], references: [id])
+  followingId String @db.ObjectId
 }
 
 model Topic {
-  id            String    @id @default(auto()) @map("_id") @db.ObjectId
-  name          String
-  description   String?
-  topicSubs     TopicSubs[]
-  posts         Post[]
+  id          String      @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  description String?
+  category    Category?   @relation(fields: [categoryId], references: [id])
+  categoryId  String?     @db.ObjectId
+  topicSubs   TopicSubs[]
+  posts       Post[]
+}
+
+model Category {
+  id           String         @id @default(auto()) @map("_id") @db.ObjectId
+  name         String
+  posts        Post[]
+  topics       Topic[]
+  categorySubs CategorySubs[]
+}
+
+model CategorySubs {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  category   Category @relation(fields: [categoryId], references: [id])
+  categoryId String   @db.ObjectId
+  follower   User     @relation("categoryFollower", fields: [followerId], references: [id])
+  followerId String   @db.ObjectId
 }
 
 model TopicSubs {
-  id            String    @id @default(auto()) @map("_id") @db.ObjectId
-  topic         Topic     @relation(fields: [topicId], references: [id])
-  topicId       String    @db.ObjectId
-  follower      User      @relation("topicFollower", fields: [followerId], references: [id])
-  followerId    String    @db.ObjectId
-
+  id         String @id @default(auto()) @map("_id") @db.ObjectId
+  topic      Topic  @relation(fields: [topicId], references: [id])
+  topicId    String @db.ObjectId
+  follower   User   @relation("topicFollower", fields: [followerId], references: [id])
+  followerId String @db.ObjectId
 }
 
 model Post {
-  id        String    @id @default(auto()) @map("_id") @db.ObjectId
-  content   String
-  author    User      @relation(fields: [authorId], references: [id])
-  authorId  String    @db.ObjectId
-  likes     Like[]
+  id         String    @id @default(auto()) @map("_id") @db.ObjectId
+  content    String
+  author     User      @relation(fields: [authorId], references: [id])
+  authorId   String    @db.ObjectId
+  likes      Like[]
   dislikes   Dislike[]
-  comments  Comment[]
-  createdAt DateTime  @default(now())
-  topic     Topic?    @relation(fields: [topicId], references: [id])
-  topicId   String?   @db.ObjectId
+  comments   Comment[]
+  createdAt  DateTime  @default(now())
+  topic      Topic?    @relation(fields: [topicId], references: [id])
+  topicId    String?   @db.ObjectId
+  category   Category? @relation(fields: [categoryId], references: [id])
+  categoryId String?   @db.ObjectId
 }
 
 model Like {

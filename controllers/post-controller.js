@@ -2,7 +2,7 @@ const { prisma } = require("../prisma/prisma-client");
 
 const PostController = {
     createPost: async (req, res) => {
-        const {content, topicId = '' } = req.body
+        const {content, topicId = '', categoryId } = req.body
 
         const authorId = req.user.userId
 
@@ -15,7 +15,8 @@ const PostController = {
                 data: {
                     content,
                     authorId,
-                    topicId
+                    topicId,
+                    categoryId
                 }
             })
             res.json(post)
@@ -36,6 +37,7 @@ const PostController = {
                     author: true,
                     comments: true,
                     topic: true,
+                    category: true
                 },
                 orderBy: {
                     createdAt: 'desc'
@@ -135,7 +137,7 @@ const PostController = {
                 }
             })
             if (!posts) {
-                return res.status(404).json({error: 'запись не найдена1111'})
+                return res.status(404).json({error: 'запись не найдена'})
             }
             const postsWithLikeByUser = posts.map(post => {
                 const likedByUser = post.likes.some(like => like.userId === userId);

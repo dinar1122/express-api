@@ -92,6 +92,31 @@ const TopicSubsController = {
         res.status(500).json({ error: "Ошибка при получении тем" });
     }
   },
+  getTopicsByCategoryId: async (req, res) => {
+    const { categoryId } = req.params;
+
+    const { userId } = req.user;
+
+    try {
+      
+        const topics = await prisma.topic.findMany({
+          where: {
+            categoryId: categoryId
+        },
+          include: {
+              topicSubs: true,
+          },
+      })
+      /* const topicsWithSubscription = topics.map((topic) => ({
+        ...topic,
+        isSubscribed: topic.topicSubs.some(sub => sub.followerId === userId)
+    })); */
+        res.json(topics)
+    } catch (error) {
+        console.log(error)
+        res.status(500).json({ error: "Ошибка при получении тем по категории" });
+    }
+  },
 };
 
 module.exports = TopicSubsController;

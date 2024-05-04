@@ -8,7 +8,8 @@ const {
   LikeController,
   SubsController,
   DislikeController,
-  TopicSubsController
+  TopicSubsController,
+  CategoryController
 } = require("../controllers");
 const { authToken } = require("../middleware/auth");
 
@@ -63,6 +64,14 @@ router.delete("/follows/:id", authToken, SubsController.unsubscribeUser);
 
 router.post('/topic/:topicId', authToken, TopicSubsController.createSubcription)
 router.get('/topic', authToken, TopicSubsController.getAllTopics)
+router.get('/topic/category/:categoryId', authToken, TopicSubsController.getTopicsByCategoryId)
 router.delete('/topic/:topicId', authToken, TopicSubsController.removeSubcription)
+
+/* Category */
+router.get('/category', authToken, CategoryController.getAllCategories)
+router.post('/category/:categoryId', authToken, CategoryController.createSubcription)
+router.delete('/category/:categoryId', authToken, CategoryController.removeSubcription)
+
+
 
 module.exports = router;
