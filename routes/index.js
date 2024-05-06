@@ -69,6 +69,7 @@ router.delete('/topic/:topicId', authToken, TopicSubsController.removeSubcriptio
 
 /* Category */
 router.get('/category', authToken, CategoryController.getAllCategories)
+router.get('/category/:categoryId', authToken, CategoryController.getCategoryById)
 router.post('/category/:categoryId', authToken, CategoryController.createSubcription)
 router.delete('/category/:categoryId', authToken, CategoryController.removeSubcription)
 

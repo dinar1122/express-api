@@ -40,7 +40,6 @@ const UserController = {
       console.error(`ошибка при регистрации ${error}`);
       res.status(500).json({ error: "server error " + error });
     }
-    
   },
   login: async (req, res) => {
     const { email, password } = req.body;
@@ -79,7 +78,15 @@ const UserController = {
         },
         include: {
           followers: true,
-          following: true,
+          topics: { include: 
+            { topic: true }
+           },
+          category: { include: 
+            { category: true }
+           },
+          following: { include: 
+            { following: true }
+           },
         },
       });
       if (!user) {
@@ -87,84 +94,81 @@ const UserController = {
       }
       const isFollowing = await prisma.follows.findFirst({
         where: {
-          AND: [
-            { followerId: userId },
-            { followingId: id }
-          ]
-        }
+          AND: [{ followerId: userId }, { followingId: id }],
+        },
       });
-      res.json({...user, isFollowing: Boolean(isFollowing)})
+      res.json({ ...user, isFollowing: Boolean(isFollowing) });
     } catch (error) {
-        res.status(500).json({error: ('server error' + error)})
+      res.status(500).json({ error: "server error" + error });
     }
   },
   updateUser: async (req, res) => {
-    const {id} = req.params
-    const {email, username, dateOfBirth , bio, location} = req.body
-    let filePath
+    const { id } = req.params;
+    const { email, username, dateOfBirth, bio, location } = req.body;
+    let filePath;
 
     if (req.file && req.file.path) {
-        filePath = req.file.path
+      filePath = req.file.path;
     }
 
     if (id !== req.user.userId) {
-        return res.status(403).json({error:'no access'})
+      return res.status(403).json({ error: "no access" });
     }
 
     try {
-        if (email) {
-            const existingUser = await prisma.user.findFirst({
-                where: {
-                    email: email
-                }
-            })
-            console.log(existingUser)
-            if (existingUser && existingUser.id !== id) {
-                return res.status(400).json({ error: 'mail already using'})
-            }
+      if (email) {
+        const existingUser = await prisma.user.findFirst({
+          where: {
+            email: email,
+          },
+        });
+        console.log(existingUser);
+        if (existingUser && existingUser.id !== id) {
+          return res.status(400).json({ error: "mail already using" });
         }
-        const user = await prisma.user.update({
-            where: {id},
-            data: {
-                email: email || undefined,
-                username: username || undefined,
-                avatarUrl: filePath ? `/${filePath}` : undefined,
-                dateOfBirth: dateOfBirth || undefined,
-                bio: bio || undefined,
-                location: location || undefined,
-              },
-        })
-        res.json(user)
+      }
+      const user = await prisma.user.update({
+        where: { id },
+        data: {
+          email: email || undefined,
+          username: username || undefined,
+          avatarUrl: filePath ? `/${filePath}` : undefined,
+          dateOfBirth: dateOfBirth || undefined,
+          bio: bio || undefined,
+          location: location || undefined,
+        },
+      });
+      res.json(user);
     } catch (error) {
-        console.log('update error', error)
-        res.status(500)
+      console.log("update error", error);
+      res.status(500);
     }
   },
   currentUser: async (req, res) => {
     try {
-        const user = await prisma.user.findUnique({
-            where: {
-                id: req.user.userId
-            },
+      const user = await prisma.user.findUnique({
+        where: {
+          id: req.user.userId,
+        },
+        include: {
+          followers: {
             include: {
-                followers: {
-                    include: {
-                        follower: true
-                    }
-                },
-                following: {
-                    include: {
-                        following: true
-                    }
-                }
-            }
-        })
-        if (!user) {
-            return res.status(400).json({ error: 'пользователь не найден'})
-        }
-        return res.status(200).json(user)
+              follower: true,
+            },
+          },
+          following: {
+            include: {
+              following: true,
+            },
+          },
+        },
+      });
+      if (!user) {
+        return res.status(400).json({ error: "пользователь не найден" });
+      }
+      return res.status(200).json(user);
     } catch (error) {
-        console.log('err', error)
+      console.log("err", error);
       res.status(500).json({ error: "Что-то пошло не так" });
     }
   },

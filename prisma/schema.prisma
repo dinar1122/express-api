@@ -54,9 +54,11 @@ model Topic {
 model Category {
   id           String         @id @default(auto()) @map("_id") @db.ObjectId
   name         String
+  description  String?
   posts        Post[]
   topics       Topic[]
   categorySubs CategorySubs[]
+  avatarUrl    String?
 }
 
 model CategorySubs {

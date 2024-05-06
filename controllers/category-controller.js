@@ -47,6 +47,55 @@ const CategoryController = {
             res.status(500).json({ error: "Ошибка при получении категорий" + error});
         }
       },
+       getCategoryById: async (req, res) => {
+        const { categoryId } = req.params;
+        const { userId } = req.user;
+    
+        try {
+            const category = await prisma.category.findUnique({
+                where: {
+                    id: categoryId,
+                },
+                select: {
+                    id: true,
+                    name: true,
+                    description: true,
+                    avatarUrl: true,
+                    topics: {
+                        include: {
+                            posts: {include:{author:true}},
+                            topicSubs: true,
+                        },
+                    },
+                },
+            });
+    
+            if (!category) {
+                return res.status(404).json({ error: "Категория не найдена" });
+            }
+
+            const categoryWithSubscribeField = {
+              ...category,
+              isSubscribed: !!(await prisma.categorySubs.findFirst({
+                where: {
+                  AND: [
+                    {
+                        categoryId: categoryId,
+                    },
+                    {
+                        followerId: userId,
+                    },
+                ],
+                }
+              }))
+            }
+    
+            res.json(categoryWithSubscribeField);
+        } catch (error) {
+            console.log(error);
+            res.status(500).json({ error: "Ошибка при получении категории" + error });
+        }
+    },
       createSubcription: async (req, res) => {
         const { categoryId } = req.params;
         const { userId } = req.user;
