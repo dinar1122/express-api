@@ -64,6 +64,7 @@ const PostController = {
                     id: id
                 },
                 include: {
+                    category:true,
                     comments: {
                         include: {
                             user: true

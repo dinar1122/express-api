@@ -9,7 +9,8 @@ const {
   SubsController,
   DislikeController,
   TopicSubsController,
-  CategoryController
+  CategoryController,
+  NotificationController
 } = require("../controllers");
 const { authToken } = require("../middleware/auth");
 
@@ -73,6 +74,8 @@ router.get('/category/:categoryId', authToken, CategoryController.getCategoryByI
 router.post('/category/:categoryId', authToken, CategoryController.createSubcription)
 router.delete('/category/:categoryId', authToken, CategoryController.removeSubcription)
 
+/* Notification */
 
+router.get('/notifications', authToken, NotificationController.getNotificationsByUserId)
 
 module.exports = router;
