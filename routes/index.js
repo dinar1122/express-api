@@ -77,5 +77,6 @@ router.delete('/category/:categoryId', authToken, CategoryController.removeSubcr
 /* Notification */
 
 router.get('/notifications', authToken, NotificationController.getNotificationsByUserId)
+router.post('/notifications', authToken, NotificationController.readNotifications)
 
 module.exports = router;

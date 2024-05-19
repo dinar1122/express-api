@@ -22,6 +22,12 @@ try {
             category: true
         }
       },
+      follows: {
+        include: {
+            follower: true,
+            following: true
+        }
+      },
     },
   });
 
@@ -44,6 +50,25 @@ try {
       res.status(500).json({ error: "Ошибка при получении уведомлений" });
     }
   },
+  readNotifications: async (req, res) => {
+    const { userId } = req.user;
+
+    const updatedNotifications = await prisma.notification.updateMany({
+        where: {
+            userId: userId,
+            isRead: false 
+        },
+        data: {
+            isRead: true  
+        }
+    });
+    
+    if (updatedNotifications.count > 0) {
+        res.status(200).json(`успешно прочитано ${updatedNotifications.count} уведомление для пользователя ${userId}.`);
+    } else {
+        res.status(404).json(`нет непрочитанных уведомлений для ${userId}.`);
+    }
+  }
 };
 
 module.exports = NotificationController

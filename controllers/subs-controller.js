@@ -34,6 +34,15 @@ const SubsController = {
           following: { connect: { id: followingId } },
         },
       });
+      
+      const createNotification = await prisma.notification.create({
+        data: {
+          userId: followingId,
+          followsId: createdSubs.id,
+          objectType: 'follows'
+        }
+      });
+
       res.status(200).json(createdSubs);
     } catch (error) {
       console.log(error);
@@ -65,6 +74,7 @@ const SubsController = {
           id: existingSubs.id,
         },
       });
+      
       res.status(200).json(removedSubs);
     } catch (error) {
       console.log(error);

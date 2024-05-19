@@ -19,6 +19,22 @@ const PostController = {
                     categoryId
                 }
             })
+
+        const subscribedUsersOnTopic = await prisma.topicSubs.findMany({
+            where: {
+                topicId: topicId,
+            }
+        })
+
+        const notificationsData = subscribedUsersOnTopic.map((user) => ({
+            userId: user.followerId,
+            postId: post.id, 
+            objectType: "post",
+        }));
+
+        const createdNotifications = await prisma.notification.createMany({
+            data: notificationsData,
+        });
             res.json(post)
         }
         catch(error) {
@@ -109,7 +125,8 @@ const PostController = {
                 prisma.comment.deleteMany({ where: { postId: id}}),
                 prisma.like.deleteMany({ where: { postId: id}}),
                 prisma.dislike.deleteMany({ where: { postId: id}}),
-                prisma.post.delete({ where: { id: id}})
+                prisma.notification.deleteMany({  where: { postId: id}}),
+                prisma.post.delete({ where: { id: id}}),
             ])
             res.json(transaction)
         } catch (error) {
