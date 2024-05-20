@@ -29,6 +29,9 @@ try {
         }
       },
     },
+    orderBy: {
+        timestamp: 'desc'
+    }
   });
 
   if (notifications) {

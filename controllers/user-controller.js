@@ -79,7 +79,9 @@ const UserController = {
         include: {
           followers: true,
           topics: { include: 
-            { topic: true }
+            { topic: { include: {
+              posts: {include: {author: true}}
+            }}}
            },
           category: { include: 
             { category: true }

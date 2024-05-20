@@ -45,6 +45,13 @@ const PostController = {
     getAllPosts: async (req, res) => {
         const userId = req.user.userId
 
+        const { limit = 4, page = 1 } = req.query;
+
+        const pageLimit = parseInt(limit, 10);
+        const pageOffset = (parseInt(page, 10) - 1) * pageLimit;
+
+        const totalPosts = await prisma.post.count();
+
         try {
             const posts = await prisma.post.findMany({
                 include: {
@@ -57,14 +64,21 @@ const PostController = {
                 },
                 orderBy: {
                     createdAt: 'desc'
-                }
+                },
+                take: pageLimit,
+                skip: pageOffset
             })
             const postWithLikeByUser = posts.map(item => ({
                 ...item,
                 likedByUser: item.likes.some(like => like.userId === userId),
                 dislikedByUser: item.dislikes.some(dislike => dislike.userId === userId)
             }))
-            res.json(postWithLikeByUser)
+            res.json({
+                totalPosts,          
+                posts: postWithLikeByUser,
+                currentPage: page,  
+                totalPages: Math.ceil(totalPosts / pageLimit) 
+              });
         } catch (error) {
             console.log('ошибка при получении всех постов' + error)
             res.status(500).json({error: 'server error'})
@@ -83,6 +97,8 @@ const PostController = {
                     category:true,
                     comments: {
                         include: {
+                            replyToComment: true,
+                            replies: {include: {user: true}},
                             user: true
                         }
                     },
