@@ -15,3 +15,10 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: monty
       MONGO_INITDB_ROOT_PASSWORD: pass
+ react-app: # React-приложение
+    build: ../tech-forum # Путь к React-приложению относительно корня вашего проекта
+    ports:
+      - '80:80' # Порт, на котором будет доступно React-приложение
+      - '8000:8000' # Порт, на котором будет доступно React-приложение
+volumes:
+ react_app: # Объявление именованного тома

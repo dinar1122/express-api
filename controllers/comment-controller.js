@@ -1,26 +1,49 @@
 const { prisma } = require("../prisma/prisma-client");
+const mentionPattern = /@\[(.*?)\]\((.*?)\)/g;
+
 
 const CommentController = {
   createComment: async (req, res) => {
-    const { postId, content } = req.body;
+    const { postId, content, replyToCommentId = '' } = req.body;
     const userId = req.user.userId;
-    console.log(req.body);
+  
     if (!(postId && content)) {
       return res.status(400).json({ error: "заполните все поля" });
     }
-
+  
     try {
       const comment = await prisma.comment.create({
         data: {
           content: content,
           postId: postId,
           userId: userId,
+          replyToCommentId: replyToCommentId
         },
       });
-
+  
+      const mentions = [];
+      let match;
+      while ((match = mentionPattern.exec(content)) !== null) {
+        mentions.push({
+          display: match[1],
+          userId: match[2],
+        });
+      }
+  
+      for (const mention of mentions) {
+        await prisma.notification.create({
+          data: {
+            objectType: 'MENTION',
+            userId: mention.userId,
+            postId: postId,
+            isRead: false
+          },
+        });
+      }
+  
       res.status(200).json(comment);
     } catch (error) {
-      console.log("create comment error server");
+      console.log("create comment error server", error);
       res.status(500).json({ error: "server error" });
     }
   },

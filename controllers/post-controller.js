@@ -7,7 +7,7 @@ const PostController = {
         const authorId = req.user.userId
 
         if (!content) {
-            return res.status(400).json({error:'all fields must be filled'})
+            return res.status(400).json({error:'все поля должны быть заполнены'})
         }
 
         try {
@@ -42,6 +42,41 @@ const PostController = {
             res.status(500).json({error: 'server error'})
         }
     },
+    updatePostById: async (req, res) => {
+        const { postId, content, topicId, categoryId } = req.body;
+        const authorId = req.user.userId;
+
+    if (!content) {
+        return res.status(400).json({ error: 'все поля должны быть заполнены' });
+    }
+
+    try {
+        const post = await prisma.post.findUnique({ where: { id: postId } });
+        if (!post) {
+            return res.status(404).json({ error: 'запись не найдена' });
+        }
+
+        if (post.authorId !== authorId) {
+            return res.status(403).json({ error: 'Доступ запрещен' });
+        }
+
+        const updatedPost = await prisma.post.update({
+            where: { id: postId },
+            data: {
+                content,
+                topicId: topicId,
+                categoryId: categoryId
+            }
+        });
+
+        return res.status(200).json(updatedPost);
+
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ error: 'ошибка при обновлении поста' });
+    }
+       
+    }, 
     getAllPosts: async (req, res) => {
         const userId = req.user.userId
 
@@ -55,6 +90,7 @@ const PostController = {
         try {
             const posts = await prisma.post.findMany({
                 include: {
+                    postTags:{include: {tag: true}},
                     likes: true,
                     dislikes: true,
                     author: true,
@@ -71,7 +107,8 @@ const PostController = {
             const postWithLikeByUser = posts.map(item => ({
                 ...item,
                 likedByUser: item.likes.some(like => like.userId === userId),
-                dislikedByUser: item.dislikes.some(dislike => dislike.userId === userId)
+                dislikedByUser: item.dislikes.some(dislike => dislike.userId === userId),
+                rating: item.likes.length - item.dislikes.length
             }))
             res.json({
                 totalPosts,          
@@ -95,11 +132,15 @@ const PostController = {
                 },
                 include: {
                     category:true,
+                    postTags:{include: {tag: true}},
                     comments: {
                         include: {
                             replyToComment: true,
                             replies: {include: {user: true}},
                             user: true
+                        },
+                        orderBy: {
+                            createdAt: 'desc'
                         }
                     },
                     likes: true,
@@ -143,6 +184,7 @@ const PostController = {
                 prisma.dislike.deleteMany({ where: { postId: id}}),
                 prisma.notification.deleteMany({  where: { postId: id}}),
                 prisma.post.delete({ where: { id: id}}),
+                prisma.postTag.deleteMany({ where:{ postId: id}})
             ])
             res.json(transaction)
         } catch (error) {

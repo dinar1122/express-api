@@ -29,9 +29,12 @@ model User {
   comments      Comment[]
   followers     Follows[]      @relation("following")
   following     Follows[]      @relation("follower")
+  userTags      UserTag[]
   topics        TopicSubs[]    @relation("topicFollower")
   category      CategorySubs[] @relation("categoryFollower")
   notifications Notification[]
+  isAdmin       Boolean        @default(false)
+  reportsSent   Report[]       @relation("UserReports")
 }
 
 model Notification {
@@ -67,6 +70,7 @@ model Topic {
   topicSubs     TopicSubs[]
   posts         Post[]
   notifications Notification[]
+  likes         Like[]
 }
 
 model Category {
@@ -108,15 +112,19 @@ model Post {
   topicId       String?        @db.ObjectId
   category      Category?      @relation(fields: [categoryId], references: [id])
   categoryId    String?        @db.ObjectId
+  postTags      PostTag[]
   notifications Notification[]
+  reports       Report[]       @relation("PostReports")
 }
 
 model Like {
-  id     String @id @default(auto()) @map("_id") @db.ObjectId
-  user   User   @relation(fields: [userId], references: [id])
-  userId String @db.ObjectId
-  posts  Post   @relation(fields: [postId], references: [id])
-  postId String @db.ObjectId
+  id      String  @id @default(auto()) @map("_id") @db.ObjectId
+  user    User    @relation(fields: [userId], references: [id])
+  userId  String  @db.ObjectId
+  posts   Post?   @relation(fields: [postId], references: [id])
+  postId  String? @db.ObjectId
+  topic   Topic?  @relation(fields: [topicId], references: [id])
+  topicId String? @db.ObjectId
 }
 
 model Dislike {
@@ -137,4 +145,42 @@ model Comment {
   replyToComment   Comment?  @relation("CommentReplies", fields: [replyToCommentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   replyToCommentId String?   @db.ObjectId
   replies          Comment[] @relation("CommentReplies")
+  createdAt        DateTime  @default(now())
+}
+
+model Tag {
+  id       String    @id @default(auto()) @map("_id") @db.ObjectId
+  name     String    @unique
+  postTags PostTag[]
+  userTags UserTag[]
+}
+
+model PostTag {
+  id     String @id @default(auto()) @map("_id") @db.ObjectId
+  post   Post   @relation(fields: [postId], references: [id])
+  postId String @db.ObjectId
+  tag    Tag    @relation(fields: [tagId], references: [id])
+  tagId  String @db.ObjectId
+}
+
+model UserTag {
+  id     String @id @default(auto()) @map("_id") @db.ObjectId
+  user   User   @relation(fields: [userId], references: [id])
+  userId String @db.ObjectId
+  tag    Tag    @relation(fields: [tagId], references: [id])
+  tagId  String @db.ObjectId
+}
+
+model Report {
+  id           String    @id @default(auto()) @map("_id") @db.ObjectId
+  reportedBy   User      @relation("UserReports", fields: [reportedById], references: [id])
+  reportedById String    @db.ObjectId
+  post         Post      @relation("PostReports", fields: [postId], references: [id])
+  postId       String    @db.ObjectId
+  reason       String
+  comment      String?
+  createdAt    DateTime  @default(now())
+  isProcessed  Boolean   @default(false)
+  processedBy  String?   @db.ObjectId
+  processedAt  DateTime?
 }

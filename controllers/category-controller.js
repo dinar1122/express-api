@@ -1,101 +1,144 @@
 const { prisma } = require("../prisma/prisma-client");
 
 const CategoryController = {
-    getAllCategories: async (req, res) => {
-        const { userId } = req.user;
-    
-        try {
-          
-            const category = await prisma.category.findMany({
-              include: {
-                  topics: {
+  getAllCategories: async (req, res) => {
+    const { userId } = req.user;
+    try {
+        const categories = await prisma.category.findMany({
+            include: {
+                topics: {
                     include: {
-                        posts: true,
-                        topicSubs: true
-                    }
-                  },
-              },
-          })
-          const categoriesWithSubscription = await Promise.all(
-            category.map(async (category) => {
+                        posts: {
+                            include: {
+                                author: true,
+                                likes: true,
+                            },
+                        },
+                        topicSubs: true,
+                        likes: true,
+                    },
+                },
+                categorySubs: true,
+            },
+        });
+
+        const categoriesWithSubscription = await Promise.all(
+            categories.map(async (category) => {
                 const isSubscribed = await prisma.categorySubs.findFirst({
                     where: {
                         AND: [
-                            {
-                                categoryId: category.id,
-                            },
-                            {
-                                followerId: userId,
-                            },
+                            { categoryId: category.id },
+                            { followerId: userId },
                         ],
                     },
                 });
-    
+
                 const topics = await Promise.all(
                     category.topics.map(async (topic) => {
-                        const isSubscribed = topic.topicSubs.some(sub => sub.followerId === userId);
-                        return { ...topic, isSubscribed };
+                        const isSubscribed = topic.topicSubs.some(
+                            (sub) => sub.followerId === userId
+                        );
+                        const isLiked = await prisma.like.findFirst({
+                          where: {
+                              topicId: topic.id,
+                              userId: userId
+                          },
+                      });
+                      const rating = await prisma.like.findMany({
+                        where: {
+                            topicId: topic.id,
+                        },
+                    });
+                        return { ...topic, isSubscribed, isLiked:!!isLiked, rating: rating.length };
                     })
                 );
-    
+
                 return { ...category, isSubscribed: !!isSubscribed, topics };
             })
         );
-            res.json(categoriesWithSubscription)
-        } catch (error) {
-            console.log(error)
-            res.status(500).json({ error: "Ошибка при получении категорий" + error});
-        }
-      },
-       getCategoryById: async (req, res) => {
-        const { categoryId } = req.params;
-        const { userId } = req.user;
-    
-        try {
-            const category = await prisma.category.findUnique({
+
+        res.json(categoriesWithSubscription);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Ошибка при получении категорий: " + error });
+    }
+},
+getCategoryById: async (req, res) => {
+  const { categoryId } = req.params;
+  const { userId } = req.user;
+
+  try {
+      const category = await prisma.category.findUnique({
+          where: {
+              id: categoryId,
+          },
+          select: {
+              id: true,
+              name: true,
+              description: true,
+              avatarUrl: true,
+              topics: {
+                  include: {
+                      posts: {
+                          include: {
+                              author: true,
+                          },
+                      },
+                      topicSubs: true,
+                  },
+              },
+          },
+      });
+
+      if (!category) {
+          return res.status(404).json({ error: "Категория не найдена" });
+      }
+
+      const isSubscribed = !!(await prisma.categorySubs.findFirst({
+          where: {
+              categoryId: categoryId,
+              followerId: userId,
+          },
+      }));
+      const followers = (await prisma.categorySubs.findMany({
+        where: {
+            categoryId: categoryId,
+        },
+    }));
+      const topicsWithSubscription = await Promise.all(
+          category.topics.map(async (topic) => {
+              const rating = await prisma.like.findMany({
+                  where: {
+                      topicId: topic.id,
+                  },
+              });
+
+              const isSubscribed = topic.topicSubs.some(
+                  (sub) => sub.followerId === userId
+              );
+              const isLiked = await prisma.like.findFirst({
                 where: {
-                    id: categoryId,
-                },
-                select: {
-                    id: true,
-                    name: true,
-                    description: true,
-                    avatarUrl: true,
-                    topics: {
-                        include: {
-                            posts: {include:{author:true}},
-                            topicSubs: true,
-                        },
-                    },
+                    topicId: topic.id,
+                    userId: userId
                 },
             });
-    
-            if (!category) {
-                return res.status(404).json({ error: "Категория не найдена" });
-            }
+              return { ...topic, isSubscribed, rating: rating.length, isLiked: !!isLiked};
+          })
+      );
 
-            const categoryWithSubscribeField = {
-              ...category,
-              isSubscribed: !!(await prisma.categorySubs.findFirst({
-                where: {
-                  AND: [
-                    {
-                        categoryId: categoryId,
-                    },
-                    {
-                        followerId: userId,
-                    },
-                ],
-                }
-              }))
-            }
-    
-            res.json(categoryWithSubscribeField);
-        } catch (error) {
-            console.log(error);
-            res.status(500).json({ error: "Ошибка при получении категории" + error });
-        }
-    },
+      const categoryWithSubscribeFields = {
+          ...category,
+          topics: topicsWithSubscription,
+          isSubscribed,
+          followers: followers.length
+      };
+
+      res.json(categoryWithSubscribeFields);
+  } catch (error) {
+      console.log(error);
+      res.status(500).json({ error: "Ошибка при получении категории: " + error });
+  }
+},
       createSubcription: async (req, res) => {
         const { categoryId } = req.params;
         const { userId } = req.user;

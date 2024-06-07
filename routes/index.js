@@ -10,7 +10,8 @@ const {
   DislikeController,
   TopicSubsController,
   CategoryController,
-  NotificationController
+  NotificationController,
+  TagController
 } = require("../controllers");
 const { authToken } = require("../middleware/auth");
 
@@ -29,13 +30,16 @@ const uploads = multer({
 /* user */
 router.post("/register", UserController.register);
 router.post("/login", UserController.login);
+
 router.get("/current", authToken, UserController.currentUser);
 router.get("/users/:id", authToken, UserController.getUserById);
+router.get("/users/search/:username", authToken, UserController.searchUsersByUsername);
 router.put("/users/:id", authToken, UserController.updateUser);
 
 /* posts */
 
 router.post("/posts", authToken, PostController.createPost);
+router.put("/posts/:id", authToken, PostController.updatePostById);
 router.delete("/posts/:id", authToken, PostController.removePostById);
 router.get("/posts", authToken, PostController.getAllPosts);
 router.get("/posts/:id", authToken, PostController.getPostById);
@@ -50,6 +54,7 @@ router.delete("/comments/:id", authToken, CommentController.removeComment);
 /* Likes */
 
 router.post("/likes/:id", authToken, LikeController.doLike);
+router.post("/likes/topic/:id", authToken, LikeController.doLikeOnTopic);
 router.delete("/likes/:id", authToken, LikeController.removeLike);
 /* Dislikes */
 
@@ -78,5 +83,9 @@ router.delete('/category/:categoryId', authToken, CategoryController.removeSubcr
 
 router.get('/notifications', authToken, NotificationController.getNotificationsByUserId)
 router.post('/notifications', authToken, NotificationController.readNotifications)
+
+/* Tags  */
+
+router.get('/tags', authToken, TagController.getAllTags)
 
 module.exports = router;
