@@ -87,5 +87,10 @@ router.post('/notifications', authToken, NotificationController.readNotification
 /* Tags  */
 
 router.get('/tags', authToken, TagController.getAllTags)
+router.get('/tags/user', authToken, TagController.getTagsByUserId)
+router.post('/tags/:nameTag', authToken, TagController.createTag)
+router.post('/tags/sub/:tagId', authToken, TagController.createSubOnTag)
+router.delete('/tags/sub/:tagId', authToken, TagController.deleteSubOnTag)
+
 
 module.exports = router;

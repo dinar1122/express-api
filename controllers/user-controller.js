@@ -230,6 +230,9 @@ const UserController = {
           id: req.user.userId,
         },
         include: {
+          likes: true,
+          dislike: true,
+          userTags: true,
           followers: {
             include: {
               follower: true,
