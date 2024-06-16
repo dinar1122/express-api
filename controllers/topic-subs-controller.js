@@ -15,11 +15,18 @@ const TopicSubsController = {
     try {
       const createdSub = await prisma.topicSubs.create({
         data: {
-          topic: { connect: { id: topicId } },
-          follower: { connect: { id: userId } },
+            topic: { connect: { id: topicId } },
+            follower: { connect: { id: userId } },
         },
-      });
-
+        include: {
+            topic: {
+                include: {
+                    category: true,
+                    _count: { select: { posts: true } }
+                }
+            }
+        }
+    })
       res.json(createdSub);
     } catch (error) {
         console.log(error)

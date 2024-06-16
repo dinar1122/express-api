@@ -42,8 +42,9 @@ router.post("/posts", authToken, PostController.createPost);
 router.put("/posts/:id", authToken, PostController.updatePostById);
 router.delete("/posts/:id", authToken, PostController.removePostById);
 router.get("/posts", authToken, PostController.getAllPosts);
+router.get("/posts/search", authToken, PostController.getAllPosts);
 router.get("/posts/:id", authToken, PostController.getPostById);
-router.get("/posts/topic/:id", authToken, PostController.getPostByTopic);
+router.get("/posts/topic/:topicId", authToken, PostController.getAllPosts);
 
 /* comments */
 
@@ -91,6 +92,7 @@ router.get('/tags/user', authToken, TagController.getTagsByUserId)
 router.post('/tags/:nameTag', authToken, TagController.createTag)
 router.post('/tags/sub/:tagId', authToken, TagController.createSubOnTag)
 router.delete('/tags/sub/:tagId', authToken, TagController.deleteSubOnTag)
+
 
 
 module.exports = router;

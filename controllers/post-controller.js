@@ -3,7 +3,7 @@ const { prisma } = require("../prisma/prisma-client");
 const PostController = {
   createPost: async (req, res) => {
     const { content, topicId = "", categoryId, postTags } = req.body;
-    console.log(topicId)
+    console.log(topicId);
     const authorId = req.user.userId;
 
     if (!content) {
@@ -19,7 +19,7 @@ const PostController = {
           categoryId,
         },
       });
-      if(postTags) {
+      if (postTags) {
         const postTagData = postTags.map((tag) => ({
           postId: post.id,
           tagId: tag.id,
@@ -30,20 +30,19 @@ const PostController = {
         });
       }
 
-      
       const subscribedUsersOnTopic = await prisma.topicSubs.findMany({
         where: {
           topicId: topicId,
         },
       });
 
-      if(subscribedUsersOnTopic.length > 0) {
+      if (subscribedUsersOnTopic.length > 0) {
         const notificationsData = subscribedUsersOnTopic.map((user) => ({
           userId: user.followerId,
           postId: post.id,
           objectType: "post",
         }));
-  
+
         const createdNotifications = await prisma.notification.createMany({
           data: notificationsData,
         });
@@ -51,7 +50,7 @@ const PostController = {
       res.json(post);
     } catch (error) {
       console.log("create post error server" + error);
-      res.status(500).json({ error: "server error"  });
+      res.status(500).json({ error: "server error" });
     }
   },
   updatePostById: async (req, res) => {
@@ -125,19 +124,54 @@ const PostController = {
       return res.status(500).json({ error: "ошибка при обновлении поста" });
     }
   },
-
   getAllPosts: async (req, res) => {
     const userId = req.user.userId;
-
+    const {q = '' , tags = ''} = req.query;
+    const {topicId } = req.params
     const { limit = 4, page = 1 } = req.query;
-
     const pageLimit = parseInt(limit, 10);
     const pageOffset = (parseInt(page, 10) - 1) * pageLimit;
 
     try {
-      const totalPosts = await prisma.post.count();
+      
+      const tagsArray = tags ? tags.split(',') : [];
+      let whereСondition = null
 
+
+      if(topicId) {
+       whereСondition = {topicId: topicId}
+       console.log(whereСondition)
+      } else {
+        const tagFilter = tagsArray.length ? {
+          postTags: {
+            some: {
+              tagId: {
+                in: tagsArray
+              }
+            }
+          }
+        } : {};
+  
+        whereСondition = {
+          AND: [
+            {
+              content: {
+                contains: q,
+                mode: "insensitive"
+              }
+            },
+            tagFilter
+          ]
+        }
+      }
+      
+
+      const totalPosts = await prisma.post.count({
+        where: whereСondition,
+      });
+      
       const posts = await prisma.post.findMany({
+        where: whereСondition,
         include: {
           postTags: { include: { tag: true } },
           author: true,

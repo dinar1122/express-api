@@ -14,6 +14,11 @@ const CategoryController = {
                                 likes: true,
                             },
                         },
+                        _count: {
+                            select: {
+                              posts: true,
+                            },
+                          },
                         topicSubs: true,
                         likes: true,
                     },

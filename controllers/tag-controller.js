@@ -5,8 +5,12 @@ const TagController = {
     try {
       const tags = await prisma.tag.findMany({
         include: {
-          postTags: true,
-          userTags: true,
+          _count: {
+            select: {
+              postTags: true,
+              userTags: true,
+            },
+          },
         },
       });
 
@@ -17,11 +21,11 @@ const TagController = {
     }
   },
   createTag: async (req, res) => {
-    const {nameTag} = req.params
+    const { nameTag } = req.params;
     try {
       const createdTag = await prisma.tag.create({
         data: {
-          name: nameTag
+          name: nameTag,
         },
       });
 
@@ -89,13 +93,15 @@ const TagController = {
       },
     });
     if (!existingTagSub) {
-      return res.status(400).json({ error: "подписка отсутствует и не может быть удалена" });
+      return res
+        .status(400)
+        .json({ error: "подписка отсутствует и не может быть удалена" });
     }
     try {
       const deletedSub = await prisma.userTag.delete({
         where: {
-            id: existingTagSub.id
-        }
+          id: existingTagSub.id,
+        },
       });
 
       res.json(deletedSub);

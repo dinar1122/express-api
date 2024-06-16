@@ -72,115 +72,123 @@ const UserController = {
     const userId = req.user.userId;
 
     try {
-        const user = await prisma.user.findUnique({
-            where: { id },
+      const user = await prisma.user.findUnique({
+        where: { id },
+        include: {
+          comments: true,
+          posts: {
             include: {
-                comments: true,
-                posts: {
-                  include: {
-                    postTags:{include: {tag: true}},
-                    likes: true,
-                    dislikes: true,
-                    author: true,
-                    comments: true,
-                    topic: true,
-                    category: true
-                },
-                  orderBy: {
-                    createdAt: 'desc'
-                }
-                },
-                followers: true,
-                topics: {
-                    include: {
-                        topic: {
-                            include: {
-                              posts: {
-                                include: {
-                                    author: true,
-                                },
-                                orderBy: {
-                                    createdAt: 'desc'
-                                }
-                            },
-                                
-                                topicSubs: true,
-                            },
-                        },
-                    },
-                },
-                category: {
-                    include: {
-                        category: true,
-                    },
-                },
-                following: {
-                    include: {
-                        following: true,
-                    },
-                },
+              postTags: { include: { tag: true } },
+              likes: true,
+              dislikes: true,
+              author: true,
+              comments: true,
+              topic: true,
+              category: true,
             },
-        });
+            orderBy: {
+              createdAt: "desc",
+            },
+          },
+          followers: true,
+          topics: {
+            include: {
+              topic: {
+                include: {
+                  posts: {
+                    include: {
+                      author: true,
+                    },
+                    orderBy: {
+                      createdAt: "desc",
+                    },
+                  },
+                  _count: {
+                    select: {
+                      posts: true,
+                    },
+                  },
+                  topicSubs: true,
+                },
+              },
+            },
+          },
+          
+          category: {
+            include: {
+              category: true,
+            },
+          },
+          following: {
+            include: {
+              following: true,
+            },
+          },
+        },
+      });
 
-        if (!user) {
-            return res.status(404).json({ error: "User not found" });
-        }
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
 
-        const userDataWithVotesAndRating = user.posts.map(item => ({
-          ...item,
-          likedByUser: item.likes.some(like => like.userId === userId),
-          dislikedByUser: item.dislikes.some(dislike => dislike.userId === userId),
-          rating: item.likes.length - item.dislikes.length
-      }))
+      const userDataWithVotesAndRating = user.posts.map((item) => ({
+        ...item,
+        likedByUser: item.likes.some((like) => like.userId === userId),
+        dislikedByUser: item.dislikes.some(
+          (dislike) => dislike.userId === userId
+        ),
+        rating: item.likes.length - item.dislikes.length,
+      }));
 
-        const isFollowing = await prisma.follows.findFirst({
+      const isFollowing = await prisma.follows.findFirst({
+        where: {
+          AND: [{ followerId: userId }, { followingId: id }],
+        },
+      });
+
+      const topicsWithSubscription = await Promise.all(
+        user.topics.map(async (userTopic) => {
+          const { topic } = userTopic;
+          const isSubscribed = topic.topicSubs.some(
+            (sub) => sub.followerId === userId
+          );
+          const isLiked = await prisma.like.findFirst({
             where: {
-                AND: [{ followerId: userId }, { followingId: id }],
+              topicId: topic.id,
+              userId: userId,
             },
-        });
+          });
 
-        const topicsWithSubscription = await Promise.all(
-            user.topics.map(async (userTopic) => {
-                const { topic } = userTopic;
-                const isSubscribed = topic.topicSubs.some(
-                    (sub) => sub.followerId === userId
-                );
-                const isLiked = await prisma.like.findFirst({
-                  where: {
-                      topicId: topic.id,
-                      userId: userId
-                  }})
+          const rating = await prisma.like.findMany({
+            where: {
+              topicId: topic.id,
+            },
+          });
+          return {
+            ...userTopic,
+            topic: {
+              ...topic,
+              isSubscribed,
+              rating: rating.length,
+              isLiked: !!isLiked,
+            },
+          };
+        })
+      );
 
-                const rating = await prisma.like.findMany({
-                    where: {
-                        topicId: topic.id,
-                    },
-                });
-                return {
-                    ...userTopic,
-                    topic: {
-                        ...topic,
-                        isSubscribed,
-                        rating: rating.length,
-                        isLiked: !!isLiked
-                    },
-                };
-            })
-        );
+      const userWithSubscriptions = {
+        ...user,
+        posts: userDataWithVotesAndRating,
+        topics: topicsWithSubscription,
+        isFollowing: Boolean(isFollowing),
+      };
 
-        const userWithSubscriptions = {
-            ...user,
-            posts: userDataWithVotesAndRating,
-            topics: topicsWithSubscription,
-            isFollowing: Boolean(isFollowing),
-        };
-
-        res.json(userWithSubscriptions);
+      res.json(userWithSubscriptions);
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: "Server error: " + error });
+      console.error(error);
+      res.status(500).json({ error: "Server error: " + error });
     }
-},
+  },
   updateUser: async (req, res) => {
     const { id } = req.params;
     const { email, username, dateOfBirth, bio, location } = req.body;
@@ -233,6 +241,18 @@ const UserController = {
           likes: true,
           dislike: true,
           userTags: true,
+          category: true,
+          topics: {
+            include: {
+              topic: {
+                include: {
+                  category: true,
+                  _count: {select: {posts: true}}
+                },
+              },
+            },
+          },
+          notifications: true,
           followers: {
             include: {
               follower: true,
@@ -248,6 +268,28 @@ const UserController = {
       if (!user) {
         return res.status(400).json({ error: "пользователь не найден" });
       }
+      const topicsIds = user.topics.map((el) => el.topicId);
+
+      const ratings = await prisma.like.groupBy({
+        by: ["topicId"],
+        where: {
+          topicId: { in: topicsIds },
+        },
+        _count: {
+          topicId: true,
+        },
+      });
+
+      const topicRatings = ratings.reduce((acc, rating) => {
+        acc[rating.topicId] = rating._count.topicId;
+        return acc;
+      }, {});
+
+      user.topics = user.topics.map((topic) => ({
+        ...topic,
+        rating: topicRatings[topic.topicId] || 0,
+      }));
+
       return res.status(200).json(user);
     } catch (error) {
       console.log("err", error);
@@ -256,17 +298,19 @@ const UserController = {
   },
   searchUsersByUsername: async (req, res) => {
     const { username } = req.params;
-    console.log("name" + username)
+    console.log("name" + username);
     if (!username) {
-      return res.status(400).json({ error: "Параметр 'username' обязателен для поиска" });
+      return res
+        .status(400)
+        .json({ error: "Параметр 'username' обязателен для поиска" });
     }
-  
+
     try {
       const users = await prisma.user.findMany({
         where: {
           username: {
             contains: username,
-            mode: 'insensitive',
+            mode: "insensitive",
           },
         },
         include: {
@@ -282,11 +326,11 @@ const UserController = {
           },
         },
       });
-  
+
       if (users.length === 0) {
         return res.status(404).json({ error: "Пользователи не найдены" });
       }
-  
+
       return res.status(200).json(users);
     } catch (error) {
       console.log("err", error);
