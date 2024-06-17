@@ -176,7 +176,7 @@ const PostController = {
           postTags: { include: { tag: true } },
           author: true,
           comments: true,
-          topic: true,
+          topic: {include: {author: true}},
           category: true,
           _count: {
             select: {
@@ -221,7 +221,23 @@ const PostController = {
         rating: post._count.likes - post._count.dislikes,
       }));
 
+      let topicInfo = null;
+        if (topicId) {
+            if (posts.length > 0) {
+                topicInfo = posts[0].topic;
+            } else {
+                topicInfo = await prisma.topic.findUnique({
+                    where: { id: topicId },
+                    include: {
+                        category: true,
+                        _count: { select: { posts: true } },
+                    },
+                });
+            }
+        }
+
       res.json({
+        topicInfo,
         totalPosts,
         posts: postWithLikeByUser,
         currentPage: page,

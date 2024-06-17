@@ -31,6 +31,7 @@ model User {
   following     Follows[]      @relation("follower")
   userTags      UserTag[]
   topics        TopicSubs[]    @relation("topicFollower")
+  authorTopic   Topic[]        
   category      CategorySubs[] @relation("categoryFollower")
   notifications Notification[]
   isAdmin       Boolean        @default(false)
@@ -71,6 +72,9 @@ model Topic {
   posts         Post[]
   notifications Notification[]
   likes         Like[]
+  author        User          @relation(fields: [authorId], references: [id])
+  authorId      String        @db.ObjectId
+  createdAt     DateTime      @default(now())
 }
 
 model Category {
