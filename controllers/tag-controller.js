@@ -74,6 +74,9 @@ const TagController = {
           userId: userId,
           tagId: tagId,
         },
+        include: {
+          tag: true
+        }
       });
 
       res.json(createdSub);

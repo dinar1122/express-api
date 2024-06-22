@@ -8,7 +8,7 @@ const {
   LikeController,
   SubsController,
   DislikeController,
-  TopicSubsController,
+  TopicController,
   CategoryController,
   NotificationController,
   TagController
@@ -34,7 +34,7 @@ router.post("/login", UserController.login);
 router.get("/current", authToken, UserController.currentUser);
 router.get("/users/:id", authToken, UserController.getUserById);
 router.get("/users/search/:username", authToken, UserController.searchUsersByUsername);
-router.put("/users/:id", authToken, UserController.updateUser);
+router.put("/users/:id", authToken, uploads.single('file'), UserController.updateUser);
 
 /* posts */
 
@@ -69,10 +69,10 @@ router.delete("/follows/:id", authToken, SubsController.unsubscribeUser);
 
 /* Topics subs */
 
-router.post('/topic/:topicId', authToken, TopicSubsController.createSubcription)
-router.get('/topic', authToken, TopicSubsController.getAllTopics)
-router.get('/topic/category/:categoryId', authToken, TopicSubsController.getTopicsByCategoryId)
-router.delete('/topic/:topicId', authToken, TopicSubsController.removeSubcription)
+router.post('/topic/:topicId', authToken, TopicController.createSubcription)
+router.get('/topic', authToken, TopicController.getAllTopics)
+router.get('/topic/category/:categoryId', authToken, TopicController.getTopicsByCategoryId)
+router.delete('/topic/:topicId', authToken, TopicController.removeSubcription)
 
 /* Category */
 router.get('/category', authToken, CategoryController.getAllCategories)

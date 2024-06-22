@@ -230,6 +230,7 @@ const PostController = {
                     where: { id: topicId },
                     include: {
                         category: true,
+                        author:true,
                         _count: { select: { posts: true } },
                     },
                 });
@@ -254,45 +255,63 @@ const PostController = {
     const userId = req.user.userId;
 
     try {
-      const post = await prisma.post.findUnique({
-        where: {
-          id: id,
-        },
-        include: {
-          category: true,
-          postTags: { include: { tag: true } },
-          comments: {
+        const post = await prisma.post.findUnique({
+            where: { id: id },
             include: {
-              replyToComment: true,
-              replies: { include: { user: true } },
-              user: true,
+                category: true,
+                postTags: { include: { tag: true } },
+                comments: {
+                    include: {
+                        replyToComment: true,
+                        replies: { include: { user: true } },
+                        user: true,
+                    },
+                    orderBy: { createdAt: "desc" },
+                },
+                _count: {
+                  select: {
+                    comments: true
+                  }
+                },
+                likes: true,
+                dislikes: true,
+                author: true,
+                topic: true,
             },
-            orderBy: {
-              createdAt: "desc",
-            },
-          },
-          likes: true,
-          dislikes: true,
-          author: true,
-          topic: true,
-        },
-      });
-      if (!post) {
-        return res.status(404).json({ error: "запись не найдена" });
-      }
-      const postWithLikeByUser = {
-        ...post,
-        likedByUser: post.likes.some((like) => like.userId === userId),
-        dislikedByUser: post.dislikes.some(
-          (dislike) => dislike.userId === userId
-        ),
-      };
-      res.json(postWithLikeByUser);
+        });
+
+        if (!post) {
+            return res.status(404).json({ error: "запись не найдена" });
+        }
+
+        const commentMap = {};
+        post.comments.forEach(comment => {
+            commentMap[comment.id] = { ...comment, replies: [] };
+        });
+
+        const commentTree = [];
+        post.comments.forEach(comment => {
+            if (comment.replyToCommentId) {
+                commentMap[comment.replyToCommentId].replies.push(commentMap[comment.id]);
+            } else {
+                commentTree.push(commentMap[comment.id]);
+            }
+        });
+
+        const postWithLikeByUser = {
+            ...post,
+            comments: commentTree,
+            likedByUser: post.likes.some(like => like.userId === userId),
+            dislikedByUser: post.dislikes.some(dislike => dislike.userId === userId),
+        };
+
+        res.json(postWithLikeByUser);
     } catch (error) {
-      console.log("ошибка при получении поста по айди" + error);
-      res.status(500).json({ error: "server error" });
+        console.log("ошибка при получении поста по айди: " + error);
+        res.status(500).json({ error: "server error" });
     }
-  },
+},
+
   removePostById: async (req, res) => {
     console.log(req.params);
     const { id } = req.params;

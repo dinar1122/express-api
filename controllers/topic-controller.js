@@ -102,7 +102,6 @@ const TopicSubsController = {
   getTopicsByCategoryId: async (req, res) => {
     const { categoryId } = req.params;
 
-    const { userId } = req.user;
 
     try {
       
@@ -114,10 +113,7 @@ const TopicSubsController = {
               topicSubs: true,
           },
       })
-      /* const topicsWithSubscription = topics.map((topic) => ({
-        ...topic,
-        isSubscribed: topic.topicSubs.some(sub => sub.followerId === userId)
-    })); */
+    
         res.json(topics)
     } catch (error) {
         console.log(error)

@@ -4,7 +4,7 @@ const CommentController = require("./comment-controller");
 const LikeController = require("./like-controller");
 const SubsController = require("./subs-controller");
 const DislikeController = require('./dislike-controller');
-const TopicSubsController = require('./topic-subs-controller');
+const TopicController = require('./topic-controller');
 const CategoryController = require("./category-controller");
 const NotificationController = require("./notification-controller");
 const TagController = require("./tag-controller");
@@ -16,7 +16,7 @@ module.exports = {
   LikeController,
   SubsController,
   DislikeController,
-  TopicSubsController,
+  TopicController,
   CategoryController,
   NotificationController,
   TagController
