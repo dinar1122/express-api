@@ -126,57 +126,60 @@ const PostController = {
   },
   getAllPosts: async (req, res) => {
     const userId = req.user.userId;
-    const {q = '' , tags = ''} = req.query;
-    const {topicId } = req.params
+    const { q = "", tags = "", timeframe = "" } = req.query;
+    console.log(req.query);
+    const { topicId } = req.params;
     const { limit = 4, page = 1 } = req.query;
     const pageLimit = parseInt(limit, 10);
     const pageOffset = (parseInt(page, 10) - 1) * pageLimit;
 
     try {
-      
-      const tagsArray = tags ? tags.split(',') : [];
-      let whereСondition = null
+      const tagsArray = tags ? tags.split(",") : [];
+      let whereСondition = null;
 
-
-      if(topicId) {
-       whereСondition = {topicId: topicId}
-       console.log(whereСondition)
+      if (topicId) {
+        whereСondition = { topicId: topicId };
+        console.log(whereСondition);
       } else {
-        const tagFilter = tagsArray.length ? {
-          postTags: {
-            some: {
-              tagId: {
-                in: tagsArray
-              }
+        const tagFilter = tagsArray.length
+          ? {
+              postTags: {
+                some: {
+                  tagId: {
+                    in: tagsArray,
+                  },
+                },
+              },
             }
-          }
-        } : {};
-  
+          : {};
+
+        const dateCondition = getDateCondition(timeframe);
+
         whereСondition = {
           AND: [
             {
               content: {
                 contains: q,
-                mode: "insensitive"
-              }
+                mode: "insensitive",
+              },
             },
-            tagFilter
-          ]
-        }
+            tagFilter,
+            dateCondition,
+          ],
+        };
       }
-      
 
       const totalPosts = await prisma.post.count({
         where: whereСondition,
       });
-      
+
       const posts = await prisma.post.findMany({
         where: whereСondition,
         include: {
           postTags: { include: { tag: true } },
           author: true,
           comments: true,
-          topic: {include: {author: true}},
+          topic: { include: { author: true } },
           category: true,
           _count: {
             select: {
@@ -186,9 +189,7 @@ const PostController = {
             },
           },
         },
-        orderBy: {
-          createdAt: "desc",
-        },
+        orderBy: getOrderCondition(timeframe),
         take: pageLimit,
         skip: pageOffset,
       });
@@ -222,20 +223,20 @@ const PostController = {
       }));
 
       let topicInfo = null;
-        if (topicId) {
-            if (posts.length > 0) {
-                topicInfo = posts[0].topic;
-            } else {
-                topicInfo = await prisma.topic.findUnique({
-                    where: { id: topicId },
-                    include: {
-                        category: true,
-                        author:true,
-                        _count: { select: { posts: true } },
-                    },
-                });
-            }
+      if (topicId) {
+        if (posts.length > 0) {
+          topicInfo = posts[0].topic;
+        } else {
+          topicInfo = await prisma.topic.findUnique({
+            where: { id: topicId },
+            include: {
+              category: true,
+              author: true,
+              _count: { select: { posts: true } },
+            },
+          });
         }
+      }
 
       res.json({
         topicInfo,
@@ -248,6 +249,30 @@ const PostController = {
       console.log("ошибка при получении всех постов" + error);
       res.status(500).json({ error: "server error" });
     }
+    function getOrderCondition(timeframe) {
+      return timeframe ? { likes: { _count: "desc" } } : { createdAt: "desc" };
+    }
+    function getDateCondition(timeframe) {
+      const today = new Date();
+      let dateCondition = {};
+
+      switch (timeframe) {
+        case "7":
+          const sevenDaysAgo = new Date();
+          sevenDaysAgo.setDate(today.getDate() - 7);
+          dateCondition = { createdAt: { gte: sevenDaysAgo } };
+          break;
+        case "30":
+          const oneMonthAgo = new Date();
+          oneMonthAgo.setMonth(today.getMonth() - 1);
+          dateCondition = { createdAt: { gte: oneMonthAgo } };
+          break;
+        default:
+          break;
+      }
+
+      return dateCondition;
+    }
   },
 
   getPostById: async (req, res) => {
@@ -255,62 +280,66 @@ const PostController = {
     const userId = req.user.userId;
 
     try {
-        const post = await prisma.post.findUnique({
-            where: { id: id },
+      const post = await prisma.post.findUnique({
+        where: { id: id },
+        include: {
+          category: true,
+          postTags: { include: { tag: true } },
+          comments: {
             include: {
-                category: true,
-                postTags: { include: { tag: true } },
-                comments: {
-                    include: {
-                        replyToComment: true,
-                        replies: { include: { user: true } },
-                        user: true,
-                    },
-                    orderBy: { createdAt: "desc" },
-                },
-                _count: {
-                  select: {
-                    comments: true
-                  }
-                },
-                likes: true,
-                dislikes: true,
-                author: true,
-                topic: true,
+              replyToComment: true,
+              replies: { include: { user: true } },
+              user: true,
             },
-        });
+            orderBy: { createdAt: "desc" },
+          },
+          _count: {
+            select: {
+              comments: true,
+            },
+          },
+          likes: true,
+          dislikes: true,
+          author: true,
+          topic: true,
+        },
+      });
 
-        if (!post) {
-            return res.status(404).json({ error: "запись не найдена" });
+      if (!post) {
+        return res.status(404).json({ error: "запись не найдена" });
+      }
+
+      const commentMap = {};
+      post.comments.forEach((comment) => {
+        commentMap[comment.id] = { ...comment, replies: [] };
+      });
+
+      const commentTree = [];
+      post.comments.forEach((comment) => {
+        if (comment.replyToCommentId) {
+          commentMap[comment.replyToCommentId].replies.push(
+            commentMap[comment.id]
+          );
+        } else {
+          commentTree.push(commentMap[comment.id]);
         }
+      });
 
-        const commentMap = {};
-        post.comments.forEach(comment => {
-            commentMap[comment.id] = { ...comment, replies: [] };
-        });
+      const postWithLikeByUser = {
+        ...post,
+        comments: commentTree,
+        likedByUser: post.likes.some((like) => like.userId === userId),
+        dislikedByUser: post.dislikes.some(
+          (dislike) => dislike.userId === userId
+        ),
+      };
 
-        const commentTree = [];
-        post.comments.forEach(comment => {
-            if (comment.replyToCommentId) {
-                commentMap[comment.replyToCommentId].replies.push(commentMap[comment.id]);
-            } else {
-                commentTree.push(commentMap[comment.id]);
-            }
-        });
-
-        const postWithLikeByUser = {
-            ...post,
-            comments: commentTree,
-            likedByUser: post.likes.some(like => like.userId === userId),
-            dislikedByUser: post.dislikes.some(dislike => dislike.userId === userId),
-        };
-
-        res.json(postWithLikeByUser);
+      res.json(postWithLikeByUser);
     } catch (error) {
-        console.log("ошибка при получении поста по айди: " + error);
-        res.status(500).json({ error: "server error" });
+      console.log("ошибка при получении поста по айди: " + error);
+      res.status(500).json({ error: "server error" });
     }
-},
+  },
 
   removePostById: async (req, res) => {
     console.log(req.params);
