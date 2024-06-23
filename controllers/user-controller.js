@@ -113,7 +113,7 @@ const UserController = {
               },
             },
           },
-          
+
           category: {
             include: {
               category: true,
@@ -195,8 +195,8 @@ const UserController = {
     let filePath;
 
     if (req.file && req.file.path) {
-      console.log(req.file)
-      filePath = req.file.path.replace(/\\/g, '/');
+      console.log(req.file);
+      filePath = req.file.path.replace(/\\/g, "/");
     }
 
     if (id !== req.user.userId) {
@@ -241,14 +241,28 @@ const UserController = {
         include: {
           likes: true,
           dislike: true,
-          userTags: {include: {tag:true}},
-          category: {include: {category: true}},
+          userTags: { include: { tag: true } },
+          category: {
+            include: {
+              category: {
+                include: {
+                  _count: {
+                    select: {
+                      topics: true,
+                      categorySubs: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+
           topics: {
             include: {
               topic: {
                 include: {
                   category: true,
-                  _count: {select: {posts: true, likes: true}}
+                  _count: { select: { posts: true, likes: true } },
                 },
               },
             },

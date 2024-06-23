@@ -67,9 +67,10 @@ router.delete("/dislikes/:id", authToken, DislikeController.removeDislike);
 router.post("/follows/:id", authToken, SubsController.subscribeUser);
 router.delete("/follows/:id", authToken, SubsController.unsubscribeUser);
 
-/* Topics subs */
+/* Topic */
 
 router.post('/topic/:topicId', authToken, TopicController.createSubcription)
+router.post('/topic', authToken, TopicController.createTopic)
 router.get('/topic', authToken, TopicController.getAllTopics)
 router.get('/topic/category/:categoryId', authToken, TopicController.getTopicsByCategoryId)
 router.delete('/topic/:topicId', authToken, TopicController.removeSubcription)

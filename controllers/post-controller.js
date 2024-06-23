@@ -3,7 +3,6 @@ const { prisma } = require("../prisma/prisma-client");
 const PostController = {
   createPost: async (req, res) => {
     const { content, topicId = "", categoryId, postTags } = req.body;
-    console.log(topicId);
     const authorId = req.user.userId;
 
     if (!content) {
@@ -19,7 +18,7 @@ const PostController = {
           categoryId,
         },
       });
-      if (postTags) {
+      if (postTags.length > 0) {
         const postTagData = postTags.map((tag) => ({
           postId: post.id,
           tagId: tag.id,
