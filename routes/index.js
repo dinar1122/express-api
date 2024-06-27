@@ -11,9 +11,12 @@ const {
   TopicController,
   CategoryController,
   NotificationController,
-  TagController
+  TagController,
+  ReportController
 } = require("../controllers");
 const { authToken } = require("../middleware/auth");
+const { isAdmin } = require("../middleware/admin");
+
 
 const uploadDestination = "uploads";
 
@@ -94,6 +97,9 @@ router.post('/tags/:nameTag', authToken, TagController.createTag)
 router.post('/tags/sub/:tagId', authToken, TagController.createSubOnTag)
 router.delete('/tags/sub/:tagId', authToken, TagController.deleteSubOnTag)
 
+/* Report */
+
+router.get('/report', authToken, isAdmin, ReportController.getReportList)
 
 
 module.exports = router;

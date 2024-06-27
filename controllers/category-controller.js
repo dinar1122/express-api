@@ -5,12 +5,12 @@ const CategoryController = {
     try {
       const categories = await prisma.category.findMany({
         include: {
-            _count: {
-                select: {
-                  topics: true,
-                  categorySubs: true,
-                },
-              },
+          _count: {
+            select: {
+              topics: true,
+              categorySubs: true,
+            },
+          },
           topics: {
             include: {
               category: true,
@@ -42,7 +42,15 @@ const CategoryController = {
         where: {
           id: categoryId,
         },
+
         select: {
+          _count: {
+            select: {
+              topics: true,
+              categorySubs: true,
+            },
+          },
+
           id: true,
           name: true,
           description: true,
@@ -93,7 +101,7 @@ const CategoryController = {
           category: { connect: { id: categoryId } },
           follower: { connect: { id: userId } },
         },
-        include: {category: true}
+        include: { category: true },
       });
 
       res.json(createdSub);

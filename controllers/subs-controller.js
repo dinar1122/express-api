@@ -33,6 +33,9 @@ const SubsController = {
           follower: { connect: { id: userId } },
           following: { connect: { id: followingId } },
         },
+        include: {
+          following: true
+        }
       });
       
       const createNotification = await prisma.notification.create({

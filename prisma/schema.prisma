@@ -13,6 +13,14 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum ReportReason {
+  SPAM
+  HARASSMENT
+  INAPPROPRIATE_CONTENT
+  AGGRESSIVE_SPEECH
+  OTHER
+}
+
 model User {
   id            String         @id @default(auto()) @map("_id") @db.ObjectId
   email         String         @unique
@@ -181,7 +189,7 @@ model Report {
   reportedById String    @db.ObjectId
   post         Post      @relation("PostReports", fields: [postId], references: [id])
   postId       String    @db.ObjectId
-  reason       String
+  reason       ReportReason
   comment      String?
   createdAt    DateTime  @default(now())
   isProcessed  Boolean   @default(false)

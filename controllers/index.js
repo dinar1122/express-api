@@ -8,6 +8,7 @@ const TopicController = require('./topic-controller');
 const CategoryController = require("./category-controller");
 const NotificationController = require("./notification-controller");
 const TagController = require("./tag-controller");
+const ReportController = require("./report-controller");
 
 module.exports = {
   UserController,
@@ -19,5 +20,6 @@ module.exports = {
   TopicController,
   CategoryController,
   NotificationController,
-  TagController
+  TagController,
+  ReportController
 };
